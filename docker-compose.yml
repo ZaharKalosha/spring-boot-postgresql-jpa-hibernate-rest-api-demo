@@ -1,0 +1,14 @@
+version: '3.5'
+
+services:
+  postgres-automaton:
+    container_name: postgres_demo_application
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /data/postgres
+    volumes:
+      - ./postgres-db:/data/postgres
