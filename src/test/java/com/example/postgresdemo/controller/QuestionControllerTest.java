@@ -5,28 +5,19 @@ import com.example.postgresdemo.repository.QuestionRepository;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.web.context.WebApplicationContext;
 
 
-import java.util.Arrays;
-import java.util.List;
+import java.nio.CharBuffer;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -75,8 +66,16 @@ public class QuestionControllerTest {
         }
     }
 
+    private void deleteQuestionsWithExceptionOnFail() throws Exception {
+        if (!deleteQuestions()) {
+            throw new Exception("Failed to delete questions");
+        }
+    }
+
     @Test
     public void testGetQuestions() throws Exception {
+        deleteQuestionsWithExceptionOnFail();
+
         for (int assertionNumber = 0; assertionNumber < 100; assertionNumber++) {
             int pageSize = 20;
 
@@ -92,10 +91,122 @@ public class QuestionControllerTest {
                     .andExpect(MockMvcResultMatchers.jsonPath("$.totalElements", Matchers.equalTo(assertionNumber))) // Assert total elements
                     .andExpect(MockMvcResultMatchers.jsonPath("$.totalPages", Matchers.equalTo((int) Math.ceil(assertionNumber / (double) pageSize)))); // Assert total pages for 10 items per page
 
-            if (!deleteQuestions()) {
-                throw new Exception("Failed to delete questions");
-            }
+            deleteQuestionsWithExceptionOnFail();
         }
     }
 
+    @Test
+    public void testCreateCorrectQuestion() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Question 1\",\n" +
+                                "    \"description\": \"Description 1\"\n" +
+                                "}"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Question 1")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo("Description 1")));
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testCreateQuestionWithoutTitle() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"description\": \"Description\"\n" +
+                                "}"))
+                .andExpect(status().is4xxClientError());
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testCreateQuestionWithTitleLesThenThreeChars() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Te\",\n" +
+                                "    \"description\": \"Description\"\n" +
+                                "}"))
+                .andExpect(status().is4xxClientError());
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testCreateQuestionWithTitleMoreThenHundredChars() throws Exception {
+        int numberOfChars = 101;
+        String title = CharBuffer.allocate(numberOfChars).toString().replace('\0', 'T');
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"" + title + "\",\n" +
+                                "    \"description\": \"Description\"\n" +
+                                "}"))
+                .andExpect(status().is4xxClientError());
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testCreateQuestionWithoutDescription() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Question 1\"\n" +
+                                "}"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Question 1")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo(null)));
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testUpdateQuestion() throws Exception {
+        deleteQuestionsWithExceptionOnFail();
+        fillQuestions(1);
+        long questionId = questionRepository.findAll().get(0).getId();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/questions/" + questionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Edited Question 1\",\n" +
+                                "    \"description\": \"Edited Description 1\"\n" +
+                                "}"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Edited Question 1")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo("Edited Description 1")));
+
+        deleteQuestionsWithExceptionOnFail();
+    }
+
+    @Test
+    public void testUpdateQuestionWithNonExistingId() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/questions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Edited Question 1\",\n" +
+                                "    \"description\": \"Edited Description 1\"\n" +
+                                "}"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    public void testDeleteQuestion() throws Exception {
+        deleteQuestionsWithExceptionOnFail();
+        fillQuestions(1);
+        long questionId = questionRepository.findAll().get(0).getId();
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/questions/" + questionId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        deleteQuestionsWithExceptionOnFail();
+    }
 }
