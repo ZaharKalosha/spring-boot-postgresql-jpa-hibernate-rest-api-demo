@@ -5,7 +5,6 @@ import com.example.postgresdemo.repository.QuestionRepository;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,13 +13,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.web.context.WebApplicationContext;
 
 
 import java.nio.CharBuffer;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,21 +29,7 @@ public class QuestionControllerTest {
     private QuestionRepository questionRepository;
 
     @Autowired
-    private WebApplicationContext webApplicationContext;
-
-    @Autowired
     private MockMvc mockMvc;
-    @Autowired
-    private QuestionController questionController;
-
-    private void fillQuestions(Integer number) {
-        for (int i = 0; i < number; i++) {
-            Question question = new Question();
-            question.setTitle("Question " + i);
-            question.setDescription("Description " + i);
-            questionRepository.save(question);
-        }
-    }
 
     @AfterEach
     void deleteQuestions() {
@@ -188,5 +170,14 @@ public class QuestionControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.delete("/questions/" + questionId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    private void fillQuestions(Integer number) {
+        for (int i = 0; i < number; i++) {
+            Question question = new Question();
+            question.setTitle("Question " + i);
+            question.setDescription("Description " + i);
+            questionRepository.save(question);
+        }
     }
 }
