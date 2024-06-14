@@ -49,14 +49,13 @@ public class QuestionControllerTest {
         }
     }
 
-    @BeforeEach
     @AfterEach
-    public void deleteQuestions() {
+    void deleteQuestions() {
         questionRepository.deleteAll();
     }
 
     @Test
-    public void testGetQuestionsWithAmountLessThanPageSize() throws Exception {
+    void testGetQuestionsWithAmountLessThanPageSize() throws Exception {
         int assertionNumber = 10;
         int pageSize = 20;
 
@@ -72,7 +71,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testGetQuestionsWithAmountMoreThanPageSize() throws Exception {
+    void testGetQuestionsWithAmountMoreThanPageSize() throws Exception {
         int assertionNumber = 30;
         int pageSize = 20;
         int totalPages = (int) Math.ceil(assertionNumber / (double) pageSize);
@@ -89,7 +88,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testCreateCorrectQuestion() throws Exception {
+    void testCreateCorrectQuestion() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
@@ -103,7 +102,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testCreateQuestionWithoutTitle() throws Exception {
+    void testCreateQuestionWithoutTitle() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
@@ -113,7 +112,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testCreateQuestionWithTitleLesThenThreeChars() throws Exception {
+    void testCreateQuestionWithTitleLesThenThreeChars() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
@@ -124,7 +123,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testCreateQuestionWithTitleMoreThenHundredChars() throws Exception {
+    void testCreateQuestionWithTitleMoreThenHundredChars() throws Exception {
         int numberOfChars = 101;
         String title = CharBuffer.allocate(numberOfChars).toString().replace('\0', 'T');
 
@@ -138,7 +137,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testCreateQuestionWithoutDescription() throws Exception {
+    void testCreateQuestionWithoutDescription() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
@@ -151,7 +150,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testUpdateQuestion() throws Exception {
+    void testUpdateQuestion() throws Exception {
         fillQuestions(1);
         long questionId = questionRepository.findAll().get(0).getId();
 
@@ -168,7 +167,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testUpdateQuestionWithNonExistingId() throws Exception {
+    void testUpdateQuestionWithNonExistingId() throws Exception {
         fillQuestions(1);
         long questionId = questionRepository.findAll().get(0).getId();
 
@@ -182,7 +181,7 @@ public class QuestionControllerTest {
     }
 
     @Test
-    public void testDeleteQuestion() throws Exception {
+    void testDeleteQuestion() throws Exception {
         fillQuestions(1);
         long questionId = questionRepository.findAll().get(0).getId();
 
