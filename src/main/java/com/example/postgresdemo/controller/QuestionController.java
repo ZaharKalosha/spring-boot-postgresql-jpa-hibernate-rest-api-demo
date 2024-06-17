@@ -29,12 +29,12 @@ public class QuestionController {
 
     @PutMapping("/questions/{questionId}")
     public QuestionResponseDTO updateQuestion(@PathVariable Long questionId,
-                                   @Valid @RequestBody QuestionRequestDTO questionRequest) {
+                                              @Valid @RequestBody QuestionRequestDTO questionRequest) {
         return questionService.update(questionId, questionRequest);
     }
 
     @DeleteMapping("/questions/{questionId}")
-    public ResponseEntity<?> deleteQuestion(@PathVariable Long questionId) {
-        return questionService.delete(questionId);
+    public void deleteQuestion(@PathVariable Long questionId) {
+        questionService.delete(questionId);
     }
 }

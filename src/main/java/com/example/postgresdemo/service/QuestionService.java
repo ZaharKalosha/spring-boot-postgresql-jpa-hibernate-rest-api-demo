@@ -40,11 +40,11 @@ public class QuestionService {
 
     }
 
-    public ResponseEntity<?> delete(Long questionId) {
-        return questionRepository.findById(questionId)
+    public void delete(Long questionId) {
+        questionRepository.findById(questionId)
                 .map(question -> {
                     questionRepository.delete(question);
-                    return ResponseEntity.ok().build();
+                    return true;
                 }).orElseThrow(() -> new ResourceNotFoundException("Question not found with id " + questionId));
     }
 
