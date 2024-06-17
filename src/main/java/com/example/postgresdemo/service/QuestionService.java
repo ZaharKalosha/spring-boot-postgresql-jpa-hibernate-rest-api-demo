@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class QuestionService {
-    @Autowired
-    private QuestionRepository questionRepository;
+    private final QuestionRepository questionRepository;
+
+    public QuestionService(QuestionRepository questionRepository) {
+        this.questionRepository = questionRepository;
+    }
 
     public Page<QuestionResponseDTO> findAll(Pageable pageable) {
         return questionRepository.findAll(pageable)
