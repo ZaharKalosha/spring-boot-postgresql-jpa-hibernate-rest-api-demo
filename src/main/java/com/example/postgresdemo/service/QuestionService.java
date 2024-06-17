@@ -51,7 +51,7 @@ public class QuestionService {
     private QuestionResponseDTO toQuestionResponseDTO(Question question) {
         QuestionResponseDTO questionResponse = new QuestionResponseDTO();
         questionResponse.setId(question.getId());
-        questionResponse.setBody(question.getTitle() + "\n" + question.getDescription());
+        questionResponse.setBody(String.join("\n", question.getTitle(), question.getDescription()));
 
 
         return questionResponse;
