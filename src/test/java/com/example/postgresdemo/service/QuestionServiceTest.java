@@ -8,9 +8,7 @@ import com.example.postgresdemo.repository.QuestionRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.springframework.data.domain.Page;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -35,21 +33,23 @@ class QuestionServiceTest {
     void testFindAll() {
         Question question1 = new Question();
         question1.setId(1L);
-        question1.setTitle("Title1" );
+        question1.setTitle("Title1");
         question1.setDescription("Description1");
         Question question2 = new Question();
         question2.setId(2L);
         question2.setTitle("Title2");
         question2.setDescription("Description2");
-
+        Pageable pageable = PageRequest.of(0, 10);
         Page<Question> page = new PageImpl<>(Arrays.asList(question1, question2));
-        Mockito.when(questionRepository.findAll(any(PageRequest.class))).thenReturn(page);
+        Mockito.when(questionRepository.findAll(pageable)).thenReturn(page);
 
-        Page<QuestionResponseDTO> result = questionService.findAll(PageRequest.of(0, 10));
+        Page<QuestionResponseDTO> result = questionService.findAll(pageable);
 
-        Mockito.verify(questionRepository).findAll(any(Pageable.class));
+        Mockito.verify(questionRepository).findAll(pageable);
         Assertions.assertEquals(2, result.getTotalElements());
+        Assertions.assertEquals(1L, result.getContent().get(0).getId());
         Assertions.assertEquals("Title1\nDescription1", result.getContent().get(0).getBody());
+        Assertions.assertEquals(2L, result.getContent().get(1).getId());
         Assertions.assertEquals("Title2\nDescription2", result.getContent().get(1).getBody());
     }
 
@@ -91,6 +91,24 @@ class QuestionServiceTest {
         Mockito.verify(questionRepository).save(questionToUpdate);
         Assertions.assertEquals("Title\nDescription", result.getBody());
         Assertions.assertEquals(questionId, result.getId());
+    }
+
+    @Test
+    void testUpdateNotExistingQuestion() {
+        Long questionId = 123L;
+        QuestionRequestDTO request = new QuestionRequestDTO();
+        request.setTitle("Title");
+        request.setDescription("Description");
+
+        Mockito.when(questionRepository.findById(questionId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException resourceNotFoundException = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
+            questionService.update(questionId, request);
+        });
+
+        Assertions.assertEquals("Question not found with id " + questionId, resourceNotFoundException.getMessage());
+        Mockito.verify(questionRepository).findById(questionId);
+        Mockito.verifyNoMoreInteractions(questionRepository);
     }
 
     @Test
