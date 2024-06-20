@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.*;
 import org.springframework.data.domain.Page;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,8 +20,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
+import java.util.stream.Stream;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionServiceTest {
@@ -60,9 +59,8 @@ class QuestionServiceTest {
     }
 
     @ParameterizedTest
-    @NullSource
-    @ValueSource(strings = {"", "Some Description"})
-    void testCreateWithDescriptionVariations(String description) {
+    @MethodSource("provideDescriptions")
+    void testCreateWithDescriptionVariations(String description, String expectedBody) {
         QuestionRequestDTO request = new QuestionRequestDTO();
         request.setTitle("Title");
         request.setDescription(description);
@@ -84,6 +82,8 @@ class QuestionServiceTest {
         Assertions.assertEquals(request.getTitle(), capturedQuestion.getTitle());
         Assertions.assertEquals(request.getDescription(), capturedQuestion.getDescription());
         Assertions.assertEquals(1L, result.getId());
+
+        Assertions.assertEquals(expectedBody, result.getBody());
     }
 
     @Test
@@ -157,5 +157,13 @@ class QuestionServiceTest {
         Mockito.verify(questionRepository).findById(questionId);
 
         Mockito.verifyNoMoreInteractions(questionRepository);
+    }
+
+    private static Stream<Arguments> provideDescriptions() {
+        return Stream.of(
+                Arguments.of(null, "Title\nnull"),
+                Arguments.of("", "Title\n"),
+                Arguments.of("Some description", "Title\nSome description")
+        );
     }
 }
