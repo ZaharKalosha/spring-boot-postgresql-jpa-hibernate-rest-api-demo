@@ -79,8 +79,7 @@ public class QuestionControllerTest {
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Question 1")))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo("Description 1")));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body", Matchers.equalTo("Question 1\nDescription 1")));
     }
 
     @Test
@@ -88,7 +87,7 @@ public class QuestionControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
-                                "    \"description\": \"Description\"\n" +
+                                "    \"body\": \"\\nDescription\"\n" +
                                 "}"))
                 .andExpect(status().is4xxClientError());
     }
@@ -127,9 +126,7 @@ public class QuestionControllerTest {
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Question 1")))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo(null)));
-    }
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body", Matchers.equalTo("Question 1\nnull")));}
 
     @Test
     void testUpdateQuestion() throws Exception {
@@ -144,8 +141,7 @@ public class QuestionControllerTest {
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.equalTo("Edited Question 1")))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.description", Matchers.equalTo("Edited Description 1")));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body", Matchers.equalTo("Edited Question 1\nEdited Description 1")));
     }
 
     @Test
