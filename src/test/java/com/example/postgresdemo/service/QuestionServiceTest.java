@@ -8,6 +8,9 @@ import com.example.postgresdemo.repository.QuestionRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.*;
 import org.springframework.data.domain.Page;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -56,15 +59,20 @@ class QuestionServiceTest {
         Assertions.assertEquals("Title2\nDescription2", result.getContent().get(1).getBody());
     }
 
-    @Test
-    void testCreate() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "Some Description"})
+    void testCreateWithDescriptionVariations(String description) {
         QuestionRequestDTO request = new QuestionRequestDTO();
         request.setTitle("Title");
-        request.setDescription("Description");
+        request.setDescription(description);
+
         Question question = new Question();
         question.setId(1L);
         question.setTitle("Title");
-        question.setDescription("Description");
+        question.setDescription(description);
+
+        ArgumentCaptor<Question> questionCaptor = ArgumentCaptor.forClass(Question.class);
         Mockito.when(questionRepository.save(questionCaptor.capture())).thenReturn(question);
 
         QuestionResponseDTO result = questionService.create(request);
