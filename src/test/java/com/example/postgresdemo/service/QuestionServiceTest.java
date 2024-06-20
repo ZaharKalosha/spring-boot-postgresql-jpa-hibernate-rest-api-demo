@@ -82,14 +82,19 @@ class QuestionServiceTest {
         questionToUpdate.setTitle("Old Title");
         questionToUpdate.setDescription("Old Description");
 
+        ArgumentCaptor<Question> questionCaptor = ArgumentCaptor.forClass(Question.class);
         Mockito.when(questionRepository.findById(questionId)).thenReturn(Optional.of(questionToUpdate));
-        Mockito.when(questionRepository.save(any(Question.class))).thenReturn(questionToUpdate);
+        Mockito.when(questionRepository.save(questionCaptor.capture())).thenReturn(questionToUpdate);
 
         QuestionResponseDTO result = questionService.update(questionId, request);
 
         Mockito.verify(questionRepository).findById(questionId);
-        Mockito.verify(questionRepository).save(questionToUpdate);
-        Assertions.assertEquals("Title\nDescription", result.getBody());
+        Mockito.verify(questionRepository).save(questionCaptor.capture());
+
+        Question capturedQuestion = questionCaptor.getValue();
+
+        Assertions.assertEquals(request.getTitle(), capturedQuestion.getTitle());
+        Assertions.assertEquals(request.getDescription(), capturedQuestion.getDescription());
         Assertions.assertEquals(questionId, result.getId());
     }
 
