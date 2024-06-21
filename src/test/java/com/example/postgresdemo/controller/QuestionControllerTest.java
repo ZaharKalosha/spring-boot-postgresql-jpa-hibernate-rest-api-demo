@@ -1,10 +1,13 @@
 package com.example.postgresdemo.controller;
 
 import com.example.postgresdemo.model.Question;
+import com.example.postgresdemo.model.User;
 import com.example.postgresdemo.repository.QuestionRepository;
+import com.example.postgresdemo.repository.UserRepository;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,7 +17,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-
 import java.nio.CharBuffer;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,18 +24,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-
 @AutoConfigureMockMvc
 public class QuestionControllerTest {
     @Autowired
     private QuestionRepository questionRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private MockMvc mockMvc;
 
+    private Long userId;
+
+    @BeforeEach
+    void setup() {
+        User user = new User();
+        user.setFirstname("John");
+        user.setLastname("Doe");
+        userRepository.save(user);
+        userId = user.getId();
+    }
+
     @AfterEach
-    void deleteQuestions() {
+    void deleteAll() {
         questionRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -75,7 +91,8 @@ public class QuestionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
                                 "    \"title\": \"Question 1\",\n" +
-                                "    \"description\": \"Description 1\"\n" +
+                                "    \"description\": \"Description 1\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -87,24 +104,26 @@ public class QuestionControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
-                                "    \"body\": \"\\nDescription\"\n" +
+                                "    \"description\": \"Description\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().is4xxClientError());
     }
 
     @Test
-    void testCreateQuestionWithTitleLesThenThreeChars() throws Exception {
+    void testCreateQuestionWithTitleLessThanThreeChars() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
                                 "    \"title\": \"Te\",\n" +
-                                "    \"description\": \"Description\"\n" +
+                                "    \"description\": \"Description\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().is4xxClientError());
     }
 
     @Test
-    void testCreateQuestionWithTitleMoreThenHundredChars() throws Exception {
+    void testCreateQuestionWithTitleMoreThanHundredChars() throws Exception {
         int numberOfChars = 101;
         String title = CharBuffer.allocate(numberOfChars).toString().replace('\0', 'T');
 
@@ -112,7 +131,8 @@ public class QuestionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
                                 "    \"title\": \"" + title + "\",\n" +
-                                "    \"description\": \"Description\"\n" +
+                                "    \"description\": \"Description\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().is4xxClientError());
     }
@@ -122,11 +142,24 @@ public class QuestionControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/questions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
-                                "    \"title\": \"Question 1\"\n" +
+                                "    \"title\": \"Question 1\",\n" +
+                                "    \"authorId\":  \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.body", Matchers.equalTo("Question 1\nnull")));}
+                .andExpect(MockMvcResultMatchers.jsonPath("$.body", Matchers.equalTo("Question 1\nnull")));
+    }
+
+    @Test
+    void testCreateQuestionWithoutAuthor() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\n" +
+                                "    \"title\": \"Question 1\",\n" +
+                                "    \"description\": \"Description 1\"\n" +
+                                "}"))
+                .andExpect(status().is4xxClientError());
+    }
 
     @Test
     void testUpdateQuestion() throws Exception {
@@ -137,7 +170,8 @@ public class QuestionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
                                 "    \"title\": \"Edited Question 1\",\n" +
-                                "    \"description\": \"Edited Description 1\"\n" +
+                                "    \"description\": \"Edited Description 1\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
@@ -153,7 +187,8 @@ public class QuestionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\n" +
                                 "    \"title\": \"Edited Question 1\",\n" +
-                                "    \"description\": \"Edited Description 1\"\n" +
+                                "    \"description\": \"Edited Description 1\",\n" +
+                                "    \"authorId\": \"" + userId + "\"\n" +
                                 "}"))
                 .andExpect(status().is4xxClientError());
     }
@@ -173,6 +208,7 @@ public class QuestionControllerTest {
             Question question = new Question();
             question.setTitle("Question " + i);
             question.setDescription("Description " + i);
+            question.setUser(userRepository.findById(userId).orElseThrow());
             questionRepository.save(question);
         }
     }

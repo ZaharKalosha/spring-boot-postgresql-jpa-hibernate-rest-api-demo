@@ -4,7 +4,9 @@ import com.example.postgresdemo.exception.ResourceNotFoundException;
 import com.example.postgresdemo.model.Question;
 import com.example.postgresdemo.model.QuestionRequestDTO;
 import com.example.postgresdemo.model.QuestionResponseDTO;
+import com.example.postgresdemo.model.User;
 import com.example.postgresdemo.repository.QuestionRepository;
+import com.example.postgresdemo.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,9 @@ class QuestionServiceTest {
 
     @Mock
     QuestionRepository questionRepository;
+
+    @Mock
+    UserRepository userRepository;
 
     @InjectMocks
     QuestionService questionService;
@@ -61,47 +66,67 @@ class QuestionServiceTest {
     @ParameterizedTest
     @MethodSource("provideDescriptions")
     void testCreateWithDescriptionVariations(String description, String expectedBody) {
+        Long authorId = 1L;
         QuestionRequestDTO request = new QuestionRequestDTO();
         request.setTitle("Title");
         request.setDescription(description);
+        request.setAuthorId(authorId);
+
+        User user = new User();
+        user.setId(authorId);
+        user.setFirstname("John");
+        user.setLastname("Doe");
 
         Question question = new Question();
         question.setId(1L);
         question.setTitle("Title");
         question.setDescription(description);
+        question.setUser(user);
 
-        ArgumentCaptor<Question> questionCaptor = ArgumentCaptor.forClass(Question.class);
+        Mockito.when(userRepository.findById(authorId)).thenReturn(Optional.of(user));
         Mockito.when(questionRepository.save(questionCaptor.capture())).thenReturn(question);
 
         QuestionResponseDTO result = questionService.create(request);
 
+        Mockito.verify(userRepository).findById(authorId);
         Mockito.verify(questionRepository).save(questionCaptor.capture());
 
         Question capturedQuestion = questionCaptor.getValue();
 
         Assertions.assertEquals(request.getTitle(), capturedQuestion.getTitle());
         Assertions.assertEquals(request.getDescription(), capturedQuestion.getDescription());
+        Assertions.assertEquals(user, capturedQuestion.getUser());
         Assertions.assertEquals(1L, result.getId());
-
         Assertions.assertEquals(expectedBody, result.getBody());
     }
 
     @Test
     void testUpdateExistingQuestion() {
         Long questionId = 123L;
+        Long authorId = 1L;
         QuestionRequestDTO request = new QuestionRequestDTO();
         request.setTitle("Title");
         request.setDescription("Description");
+        request.setAuthorId(authorId);
+
+        User user = new User();
+        user.setId(authorId);
+        user.setFirstname("John");
+        user.setLastname("Doe");
+
         Question questionToUpdate = new Question();
         questionToUpdate.setId(questionId);
         questionToUpdate.setTitle("Old Title");
         questionToUpdate.setDescription("Old Description");
+        questionToUpdate.setUser(user);
 
+        Mockito.when(userRepository.findById(authorId)).thenReturn(Optional.of(user));
         Mockito.when(questionRepository.findById(questionId)).thenReturn(Optional.of(questionToUpdate));
         Mockito.when(questionRepository.save(questionCaptor.capture())).thenReturn(questionToUpdate);
 
         QuestionResponseDTO result = questionService.update(questionId, request);
 
+        Mockito.verify(userRepository).findById(authorId);
         Mockito.verify(questionRepository).findById(questionId);
         Mockito.verify(questionRepository).save(questionCaptor.capture());
 
@@ -109,16 +134,25 @@ class QuestionServiceTest {
 
         Assertions.assertEquals(request.getTitle(), capturedQuestion.getTitle());
         Assertions.assertEquals(request.getDescription(), capturedQuestion.getDescription());
+        Assertions.assertEquals(user, capturedQuestion.getUser());
         Assertions.assertEquals(questionId, result.getId());
     }
 
     @Test
     void testUpdateNotExistingQuestion() {
         Long questionId = 123L;
+        Long authorId = 1L;
         QuestionRequestDTO request = new QuestionRequestDTO();
         request.setTitle("Title");
         request.setDescription("Description");
+        request.setAuthorId(authorId);
 
+        User user = new User();
+        user.setId(authorId);
+        user.setFirstname("John");
+        user.setLastname("Doe");
+
+        Mockito.when(userRepository.findById(authorId)).thenReturn(Optional.of(user));
         Mockito.when(questionRepository.findById(questionId)).thenReturn(Optional.empty());
 
         ResourceNotFoundException resourceNotFoundException = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
@@ -126,6 +160,7 @@ class QuestionServiceTest {
         });
 
         Assertions.assertEquals("Question not found with id " + questionId, resourceNotFoundException.getMessage());
+        Mockito.verify(userRepository).findById(authorId);
         Mockito.verify(questionRepository).findById(questionId);
         Mockito.verifyNoMoreInteractions(questionRepository);
     }
