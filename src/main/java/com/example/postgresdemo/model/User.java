@@ -10,12 +10,9 @@ public class User {
     @GeneratedValue
     private Long id;
     @Size(min = 1, max = 50)
-    @Column(columnDefinition = "firstname")
     private String firstname;
     @Size(min = 1, max = 50)
-    @Column(columnDefinition = "lastname")
     private String lastname;
-    @Column(columnDefinition = "password")
     private String password;
 
     public User() {}
